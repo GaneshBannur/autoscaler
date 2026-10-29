@@ -1371,14 +1371,19 @@ Cluster Autoscaler generally tries to use the same go version that is used by em
 For example CA 1.21 will use the same go version as Kubernetes 1.21. Only the officially used go
 version is supported and CA may not compile using other versions.
 
-The source of truth for the used go version is builder/Dockerfile.
+CA images are compiled in cluster-autoscaler/Dockerfile. Its `golang` image tag names only the go
+minor version, for example `golang:1.26`. Release builds pull the newest patch release for that tag.
 
-Warning: do NOT rely on go version specified in go.mod file. It is only meant to control go mod
-behavior and is not indicative of the go version actually used by CA. In particular go 1.17 changes go mod
-behavior in a way that is incompatible with existing Kubernetes tooling.
-Following [Kubernetes example](https://github.com/kubernetes/kubernetes/pull/105563#issuecomment-960915506)
-we have decided to pin version specified in go.mod to 1.16 for now (even though both Kubernetes
-and CA no longer compile using go 1.16).
+builder/Dockerfile pins an exact go version. It is used by in-docker targets such as
+`make build-in-docker` and `make test-in-docker`, and by hack/verify-gofmt.sh. Its go version
+does not end up in CA images.
+
+.github/workflows/ca-test.yaml sets the go version for the CI unit tests.
+
+For a new go minor version, update all three files. For a go patch release, update builder/Dockerfile.
+
+Note: the `go` line in go.mod sets the module's [minimum go version and language version](https://go.dev/ref/mod#go-mod-file-go).
+It does not set the go version CA is built with.
 
 ### How can I run e2e tests?
 
